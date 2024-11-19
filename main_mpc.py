@@ -12,6 +12,7 @@ from robot_simulator import RobotSimulator
 from robot_wrapper import RobotWrapper      
 
 import matplotlib
+import csv
 
 print("Load robot model")
 robot, _, urdf, _ = load_full("ur5")
@@ -42,7 +43,10 @@ dt_sim = 0.002
 N_sim = 100
 
 dt = 0.010          # time step MPC
-N = int((N_sim)/10)         # horizon length MPC ### TODO: ###
+
+dividend = 10
+
+N = int((N_sim)/dividend)         # horizon length MPC ### TODO: ###
 
 q0 = np.zeros(nq)   # initial joint configuration
 dq0= np.zeros(nq)   # initial joint velocities
@@ -101,9 +105,12 @@ ubx = qMax.tolist() + vMax.tolist()
 tau_min = (tauMin).tolist()
 tau_max = (tauMax).tolist()
 
-# Variabili per tracciare la traiettoria
+# our variable ########## modification
 trajectory_x = []
 trajectory_y = []
+list_computation_time = []
+iteration = []
+tracking_error = []
 
 
 # create all the decision variables
@@ -193,6 +200,11 @@ for i in range(N_sim):
     print("Comput. time: %.3f s"%(end_time-start_time), 
           "Iters: %3d"%sol.stats()['iter_count'], 
           "Tracking err: %.3f"%np.linalg.norm(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze()))
+
+    list_computation_time.append(end_time-start_time)
+    tracking_error.append(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze())
+
+   
     
     tau = inv_dyn(sol.value(X[0]), sol.value(U[0])).toarray().squeeze()
 
@@ -212,14 +224,33 @@ for i in range(N_sim):
     # breakpoint()
     trajectory_y.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]))
     trajectory_x.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[0,3]))
-    
-    
-plt.figure(figsize=(10, 6))
-for i in range(len(trajectory_x)-1):
-    color  = "orange" if trajectory_y[i] <=wall_y else "green"
-    plt.plot(trajectory_x[i:i+2], trajectory_y[i:i+2],color=color)
-plt.axhline(y=wall_y, color='r', linestyle='--')
 
-plt.title('trajectory along plane xy robot')
-plt.show()
+def plot_y_trajectory(trajectory_x,trajectory_y,wall_y):
+    #plot graph with trajectory along y axis    
+    plt.figure(figsize=(10, 6))
+    for i in range(len(trajectory_x)-1):
+        color  = "orange" if trajectory_y[i] <=wall_y else "green"
+        plt.plot(trajectory_x[i:i+2], trajectory_y[i:i+2],color=color)
+    plt.axhline(y=wall_y, color='r', linestyle='--')
 
+    plt.title('trajectory along plane xy robot')
+    plt.show()
+    
+def save_csv_file(**data_dict):
+    # save result in csv
+    column_names = list(data_dict.keys())
+    
+    file_name = f'result_{dividend}.csv'
+    with open(file_name, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(column_names)
+        for row in zip(*data_dict.values()):
+            writer.writerow(row)  
+  
+
+save_csv_file(time_step=list(range(len(list_computation_time))),
+              computation_time=list_computation_time,
+              tracking_error=tracking_error,
+              Y_trajectory=trajectory_y)
+          
+plot_y_trajectory(trajectory_x,trajectory_y,wall_y)
