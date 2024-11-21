@@ -14,6 +14,7 @@ from robot_wrapper import RobotWrapper
 import matplotlib
 import csv
 import os
+import statistics
 
 print("Load robot model")
 robot, _, urdf, _ = load_full("ur5")
@@ -208,12 +209,15 @@ for i in range(N_sim):
           "return status", sol.stats()["return_status"],
             "dq %.3f" % np.linalg.norm(x[nq:])
     )
-
+    # a = forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]
+    # breakpoint()
+    trajectory_y.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]))
+    trajectory_x.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[0,3]))
+    status_step.append(sol.stats()["return_status"])
     list_computation_time.append(end_time-start_time)
     tracking_error.append(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze())
     velocity_result.append(np.linalg.norm(x[nq:]))
 
-    
     tau = inv_dyn(sol.value(X[0]), sol.value(U[0])).toarray().squeeze()
 
     # do a proper simulation with Pinocchio
@@ -228,12 +232,11 @@ for i in range(N_sim):
         print(colored("\nCOLLISION DETECTED", "red"))
         
 
-    # a = forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]
-    # breakpoint()
-    trajectory_y.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]))
-    trajectory_x.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[0,3]))
-    status_step.append(sol.stats()["return_status"])
-    
+def avarage_computation(x,  var_name="x"):
+    mean_value = np.mean(x) 
+    print (f"mean value of {var_name} ",mean_value)
+    return mean_value
+
 
 def plot_y_trajectory(trajectory_x,trajectory_y,wall_y):
     #plot graph with trajectory along y axis    
@@ -275,3 +278,7 @@ save_csv_file(dividend,time_step=list(range(len(list_computation_time))),
               velocity_result = velocity_result)
           
 plot_y_trajectory(trajectory_x,trajectory_y,wall_y)
+
+mena_list_computation_time = avarage_computation (list_computation_time,"list_computation_time")
+mean_tracking_error = avarage_computation (tracking_error,"tracking_error")
+mean_velocity_result = avarage_computation (velocity_result,"velocity_result")
