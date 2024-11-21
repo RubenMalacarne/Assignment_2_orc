@@ -111,7 +111,8 @@ trajectory_y = []
 list_computation_time = []
 iteration = []
 tracking_error = []
-
+status_step = []
+velocity_result = []
 
 # create all the decision variables
 X, U = [], []
@@ -199,12 +200,15 @@ for i in range(N_sim):
 
     print("Comput. time: %.3f s"%(end_time-start_time), 
           "Iters: %3d"%sol.stats()['iter_count'], 
-          "Tracking err: %.3f"%np.linalg.norm(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze()))
+          "Tracking err: %.3f"%np.linalg.norm(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze()),
+          "return status", sol.stats()["return_status"],
+            "dq %.3f" % np.linalg.norm(x[nq:])
+    )
 
     list_computation_time.append(end_time-start_time)
     tracking_error.append(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze())
+    velocity_result.append(np.linalg.norm(x[nq:]))
 
-   
     
     tau = inv_dyn(sol.value(X[0]), sol.value(U[0])).toarray().squeeze()
 
@@ -224,6 +228,8 @@ for i in range(N_sim):
     # breakpoint()
     trajectory_y.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]))
     trajectory_x.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[0,3]))
+    status_step.append(sol.stats()["return_status"])
+    
 
 def plot_y_trajectory(trajectory_x,trajectory_y,wall_y):
     #plot graph with trajectory along y axis    
@@ -251,6 +257,8 @@ def save_csv_file(**data_dict):
 save_csv_file(time_step=list(range(len(list_computation_time))),
               computation_time=list_computation_time,
               tracking_error=tracking_error,
-              Y_trajectory=trajectory_y)
+              Y_trajectory=trajectory_y,
+              status_step = status_step,
+              velocity_result = velocity_result)
           
 plot_y_trajectory(trajectory_x,trajectory_y,wall_y)
