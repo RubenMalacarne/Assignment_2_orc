@@ -13,6 +13,7 @@ from robot_wrapper import RobotWrapper
 
 import matplotlib
 import csv
+import os
 
 print("Load robot model")
 robot, _, urdf, _ = load_full("ur5")
@@ -44,7 +45,7 @@ N_sim = 100
 
 dt = 0.010          # time step MPC
 
-dividend = 10
+dividend = 4
 
 N = int((N_sim)/dividend)         # horizon length MPC ### TODO: ###
 
@@ -113,6 +114,9 @@ iteration = []
 tracking_error = []
 status_step = []
 velocity_result = []
+path = "results"
+
+
 
 # create all the decision variables
 X, U = [], []
@@ -240,21 +244,30 @@ def plot_y_trajectory(trajectory_x,trajectory_y,wall_y):
     plt.axhline(y=wall_y, color='r', linestyle='--')
 
     plt.title('trajectory along plane xy robot')
+    
     plt.show()
     
-def save_csv_file(**data_dict):
+def save_csv_file(dividend,**data_dict):
     # save result in csv
     column_names = list(data_dict.keys())
     
-    file_name = f'result_{dividend}.csv'
+    if not (os.path.exists(path) ):
+        os.makedirs(path)
+    
+    subfolder = os.path.join(path, f"result_for_{dividend}")
+    if not os.path.exists(subfolder):
+        os.makedirs(subfolder)
+    
+    file_name = os.path.join(subfolder, f'result_{dividend}.csv')
+    
     with open(file_name, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(column_names)
         for row in zip(*data_dict.values()):
             writer.writerow(row)  
   
-
-save_csv_file(time_step=list(range(len(list_computation_time))),
+  
+save_csv_file(dividend,time_step=list(range(len(list_computation_time))),
               computation_time=list_computation_time,
               tracking_error=tracking_error,
               Y_trajectory=trajectory_y,
