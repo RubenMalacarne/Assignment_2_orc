@@ -47,8 +47,6 @@ N_sim = 100
 dt = 0.010          # time step MPC
 
 
-
-
 def avarage_computation(x,  var_name="x"):
     mean_value = np.mean(x) 
     print (f"mean value of {var_name} ",mean_value)
@@ -284,6 +282,7 @@ for dividend in all_choice:
                 computation_time=list_computation_time,
                 tracking_error=tracking_error,
                 Y_trajectory=trajectory_y,
+                X_trajectory=trajectory_x,
                 status_step = status_step,
                 velocity_result = velocity_result)
             
