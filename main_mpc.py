@@ -257,6 +257,7 @@ for dividend in all_choice:
                 "dq %.3f" % np.linalg.norm(x[nq:])
         )
         # a = forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]
+        
         # breakpoint()
         trajectory_y.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]))
         trajectory_x.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[0,3]))
@@ -277,7 +278,8 @@ for dividend in all_choice:
             print(colored("\nLOWER POSITION LIMIT VIOLATED ON JOINTS", "red"), np.where(x[:nq]<qMin)[0])
         if (forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3] < wall_y):
             print(colored("\nCOLLISION DETECTED", "red"))
-            
+
+        
     save_csv_file(dividend,time_step=list(range(len(list_computation_time))),
                 computation_time=list_computation_time,
                 tracking_error=tracking_error,

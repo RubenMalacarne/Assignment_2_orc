@@ -2,10 +2,10 @@ import os
 import csv
 import matplotlib.pyplot as plt
 
-# Percorso principale dove si trovano le sottocartelle con i file CSV
 main_path = "/home/ruben/orc_folder/Assignment/A2__template"
+wall_y = 0.05
 
-# Liste per salvare le traiettorie
+
 x_trajectories = []
 y_trajectories = []
 time_steps = []
@@ -16,6 +16,7 @@ def scanning_csv_file(main_path):
     y_trajectories = []
     time_steps = []
     computation_times = []
+    
     for root, _, files in os.walk(main_path):
         for file in files:
             if file.endswith(".csv"):
@@ -26,7 +27,6 @@ def scanning_csv_file(main_path):
                 t_steps = []
                 file_path = os.path.join(root, file)
                 
-                # Legge il file CSV
                 with open(file_path, mode='r') as f:
                     reader = csv.DictReader(f)
                     
@@ -46,26 +46,35 @@ def scanning_csv_file(main_path):
 time_steps,computation_times,x_trajectories,y_trajectories = scanning_csv_file(main_path)
 
 
-plt.figure(figsize=(10, 6))
+# PLOT STUFF
+
+fig, axz = plt.subplots(1, 2, figsize=(14, 6))
+grid_style = {
+    "color": "gray",
+    "linestyle": "--",
+    "linewidth": 0.5,
+    "alpha": 0.7
+}
+
+
 for i, (x, y) in enumerate(zip(x_trajectories, y_trajectories)):
-    plt.plot(x, y, label=f'trajectory: {i+1}')
+    axz[0].plot(x, y, label=f'trajectory: {i+1}')
 
-plt.title("trajectory ee")
-plt.xlabel("X Trajectory")
-plt.ylabel("Y Trajectory")
-plt.legend()
-plt.grid()
-plt.show()
+    axz[0].axhline(y=wall_y, color='r', linestyle='--')
+    axz[0].set_title("trajectory ee")
+    axz[0].set_xlabel("X Trajectory")
+    axz[0].set_ylabel("Y Trajectory")
+    axz[0].legend()
+    axz[0].grid(**grid_style)
 
-# Crea il grafico del tempo di calcolo rispetto alle iterazioni
-plt.figure(figsize=(10, 6))
+# plt.figure(figsize=(10, 6))
 for i, (t_steps, comp_times) in enumerate(zip(time_steps, computation_times)):
-    plt.plot(t_steps, comp_times, label=f'File {i+1}')
+    axz[1].plot(t_steps, comp_times, label=f'File {i+1}')
 
-# Personalizzazione del grafico
-plt.title("Tempo di Calcolo rispetto alle Iterazioni")
-plt.xlabel("Iterazioni (time_step)")
-plt.ylabel("Tempo di Computazione (s)")
-plt.legend()
-plt.grid()
+    axz[1].set_title("Computation time compare to iteration")
+    axz[1].set_xlabel("Iteration (time_step)")
+    axz[1].set_ylabel("Computation_time  (s)")
+    axz[1].legend()
+    axz[1].grid(**grid_style)
+plt.tight_layout()
 plt.show()
