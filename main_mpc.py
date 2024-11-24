@@ -357,10 +357,12 @@ for dividend in all_choice:
     save_csv_file(dividend,time_step=list(range(len(list_computation_time))),
                 computation_time=list_computation_time,
                 tracking_error=tracking_error,
+                tracking_error_mean=tracking_error_mean,
                 Y_trajectory=trajectory_y,
                 X_trajectory=trajectory_x,
                 status_step = status_step,
-                velocity_result = velocity_result)
+                velocity_result = velocity_result,
+                dq_history = dq_history)
             
     plot_y_trajectory(trajectory_x,trajectory_y,wall_y,dividend)
     
