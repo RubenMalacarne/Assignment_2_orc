@@ -2,7 +2,7 @@ import os
 import csv
 import matplotlib.pyplot as plt
 
-main_path = "/home/ruben/orc_folder/Assignment/A2__template/results"
+main_path = "/home/ruben/orc_folder/Assignment/A2__template/results_first_part_1"
 wall_y = 0.05
 
 
@@ -107,4 +107,11 @@ for i, (t_steps, velocity_results) in enumerate(zip(time_steps, velocity_results
     axz[1,1].legend()
     axz[1,1].grid(**grid_style)
 plt.tight_layout()
+
+
+if not (os.path.exists(main_path) ):
+    os.makedirs(main_path)
+
+file_name = os.path.join(main_path, f'combination_result_{1}.png')
+plt.savefig(file_name)
 plt.show()
