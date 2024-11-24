@@ -11,10 +11,8 @@ import conf_ur5 as conf_ur5
 from robot_simulator import RobotSimulator
 from robot_wrapper import RobotWrapper      
 
-import matplotlib
 import csv
 import os
-import statistics
 
 print("Load robot model")
 robot, _, urdf, _ = load_full("ur5")
@@ -34,7 +32,7 @@ SOLVER_MAX_ITER = 3
 SIMULATOR = "pinocchio"
 POS_BOUNDS_SCALING_FACTOR = 0.2
 VEL_BOUNDS_SCALING_FACTOR = 2.0
-CONTROL_BOUNDS_SCALING_FACTOR = 1.00 ### TODO: 0.45 ###
+CONTROL_BOUNDS_SCALING_FACTOR = 1 ### TODO: 0.45 ###
 qMin = POS_BOUNDS_SCALING_FACTOR * robot.model.lowerPositionLimit
 qMax = POS_BOUNDS_SCALING_FACTOR * robot.model.upperPositionLimit
 vMax = VEL_BOUNDS_SCALING_FACTOR * robot.model.velocityLimit
@@ -71,7 +69,7 @@ def plot_y_trajectory(trajectory_x,trajectory_y,wall_y,dividend):
         os.makedirs(subfolder)
     file_name = os.path.join(subfolder, f'result_{dividend}.png')
     plt.savefig(file_name)
-        
+    plt.show()
     
 def save_csv_file(dividend,**data_dict):
     # save result in csv
@@ -91,9 +89,73 @@ def save_csv_file(dividend,**data_dict):
         writer.writerow(column_names)
         for row in zip(*data_dict.values()):
             writer.writerow(row)  
-  
-all_choice = [2,4,10]
 
+def plot_velocity_each_joint(dq_list):
+    dq_list = np.array(dq_list)
+    plt.figure(figsize=(10, 6))
+    for i in range(dq_list.shape[1]):
+        plt.plot(range(len(dq_list)), dq_list[:,i],label=f'Joint {i+1}')    
+    plt.xlabel("Time [s]")
+    plt.ylabel("Velocity")
+    plt.title("Joint Velocities Over Time")
+    plt.legend()
+    plt.grid()
+    
+    
+    if not (os.path.exists(path) ):
+        os.makedirs(path)
+    
+    subfolder = os.path.join(path, f"result_for_{dividend}")
+    if not os.path.exists(subfolder):
+        os.makedirs(subfolder)
+    file_name = os.path.join(subfolder, f'result_velocity_plot_{dividend}.png')    
+    plt.savefig(file_name)
+    plt.close()
+
+def plot_velocity_mean(velocity_result):
+    velocity_result = np.array(velocity_result)
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(len(velocity_result)), velocity_result,label="Mean Velocity Norm", color="blue")    
+    plt.xlabel("Time [s]")
+    plt.ylabel("Velocity")
+    plt.title("Joint Velocities Over Time")
+    plt.legend()
+    plt.grid()
+    
+    
+    if not (os.path.exists(path) ):
+        os.makedirs(path)
+    
+    subfolder = os.path.join(path, f"result_for_{dividend}")
+    if not os.path.exists(subfolder):
+        os.makedirs(subfolder)
+    file_name = os.path.join(subfolder, f'result_velocity_mean_plot_{dividend}.png')    
+    plt.savefig(file_name)
+    plt.close()
+    
+def plot_tracking_error(error_list):
+    # error_list = np.array(error_list)
+    plt.figure(figsize=(10, 6))
+    
+    plt.plot(range(len(error_list)), error_list, label="Tracking Error Mean", color="red")
+    plt.xlabel("Iterations")
+    plt.ylabel("Mean Tracking Error")
+    plt.title("Tracking Error Mean Over Iterations")
+    plt.grid()
+    plt.legend()
+    
+    
+    if not (os.path.exists(path) ):
+        os.makedirs(path)
+    
+    subfolder = os.path.join(path, f"result_for_{dividend}")
+    if not os.path.exists(subfolder):
+        os.makedirs(subfolder)
+    file_name = os.path.join(subfolder, f'result_tracking_error_plot_{dividend}.png')    
+    plt.savefig(file_name)
+    plt.close()
+
+all_choice = [2,4,10]
 
 for dividend in all_choice:
 
@@ -117,7 +179,6 @@ for dividend in all_choice:
     simu.init(q0, dq0)
     simu.display(q0)
         
-
 
     print("Create optimization parameters")
     ''' The parameters P contain:
@@ -154,7 +215,7 @@ for dividend in all_choice:
     tau_min = (tauMin).tolist()
     tau_max = (tauMax).tolist()
 
-    # our variable ########## modification
+    # our variable ##########
     trajectory_x = []
     trajectory_y = []
     list_computation_time = []
@@ -163,9 +224,13 @@ for dividend in all_choice:
     status_step = []
     velocity_result = []
     path = "results"
-
+    dq_history = []       
+    error_history = []   
+    time_steps = []      
+    tracking_error_mean = []
 
     N = int((N_sim)/dividend)         # horizon length MPC ### TODO: ###
+    
     # create all the decision variables
     X, U = [], []
     X += [opti.variable(nx)] # do not apply pos/vel bounds on initial state
@@ -250,11 +315,11 @@ for dividend in all_choice:
             sol = opti.debug
         end_time = clock()
 
-        print("Comput. time: %.3f s"%(end_time-start_time), 
-            "Iters: %3d"%sol.stats()['iter_count'], 
-            "Tracking err: %.3f"%np.linalg.norm(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze()),
-            "return status", sol.stats()["return_status"],
-                "dq %.3f" % np.linalg.norm(x[nq:])
+        print("Comput. time: %.3fs"%(end_time-start_time), 
+            "Iters:%3d"%sol.stats()['iter_count'], 
+            "Tracking err:%.3f"%np.linalg.norm(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze()),
+            "return status:", sol.stats()["return_status"],
+                "dq: %.3f" % np.linalg.norm(x[nq:])
         )
         # a = forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]
         
@@ -264,8 +329,16 @@ for dividend in all_choice:
         status_step.append(sol.stats()["return_status"])
         list_computation_time.append(end_time-start_time)
         tracking_error.append(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze())
+        
+        tracking_error_mean.append(np.linalg.norm(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze()))
+        
         velocity_result.append(np.linalg.norm(x[nq:]))
-
+        
+        
+        dq_history.append(x[nq:].copy())
+        
+        
+        
         tau = inv_dyn(sol.value(X[0]), sol.value(U[0])).toarray().squeeze()
 
         # do a proper simulation with Pinocchio
@@ -279,7 +352,8 @@ for dividend in all_choice:
         if (forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3] < wall_y):
             print(colored("\nCOLLISION DETECTED", "red"))
 
-        
+
+
     save_csv_file(dividend,time_step=list(range(len(list_computation_time))),
                 computation_time=list_computation_time,
                 tracking_error=tracking_error,
@@ -289,7 +363,11 @@ for dividend in all_choice:
                 velocity_result = velocity_result)
             
     plot_y_trajectory(trajectory_x,trajectory_y,wall_y,dividend)
-
+    
+    plot_velocity_each_joint(dq_history)
+    plot_velocity_mean(velocity_result)
+    plot_tracking_error(tracking_error_mean)
+    
     mena_list_computation_time = avarage_computation (list_computation_time,"list_computation_time")
     mean_tracking_error = avarage_computation (tracking_error,"tracking_error")
     mean_velocity_result = avarage_computation (velocity_result,"velocity_result")
