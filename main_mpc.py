@@ -353,7 +353,6 @@ for dividend in all_choice:
             print(colored("\nCOLLISION DETECTED", "red"))
 
 
-
     save_csv_file(dividend,time_step=list(range(len(list_computation_time))),
                 computation_time=list_computation_time,
                 tracking_error=tracking_error,
