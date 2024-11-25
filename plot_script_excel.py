@@ -2,7 +2,11 @@ import os
 import csv
 import matplotlib.pyplot as plt
 
-main_path = "/home/ruben/orc_folder/Assignment/A2__template/results_third_part_3"
+
+dir_path = os.path.dirname(os.path.abspath(__file__))
+path_name ="results_third_part_3_wv" #set the path that you want to see plots
+main_path = os.path.join(dir_path, path_name)
+# main_path = "/home/ruben/orc_folder/Assignment/A2__template/results_first_part_1"
 wall_y = 0.05
 
 
@@ -112,6 +116,6 @@ plt.tight_layout()
 if not (os.path.exists(main_path) ):
     os.makedirs(main_path)
 
-file_name = os.path.join(main_path, f'combination_result_{3}.png')
+file_name = os.path.join(main_path, f'combination_result_{1}.png')
 plt.savefig(file_name)
 plt.show()
