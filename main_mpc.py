@@ -32,7 +32,7 @@ SOLVER_MAX_ITER = 3
 SIMULATOR = "pinocchio"
 POS_BOUNDS_SCALING_FACTOR = 0.2
 VEL_BOUNDS_SCALING_FACTOR = 2.0
-CONTROL_BOUNDS_SCALING_FACTOR = 1 ### TODO: 0.45 ###
+CONTROL_BOUNDS_SCALING_FACTOR = 1                                           ### TODO: 0.45 ###
 qMin = POS_BOUNDS_SCALING_FACTOR * robot.model.lowerPositionLimit
 qMax = POS_BOUNDS_SCALING_FACTOR * robot.model.upperPositionLimit
 vMax = VEL_BOUNDS_SCALING_FACTOR * robot.model.velocityLimit
@@ -44,12 +44,10 @@ N_sim = 100
 
 dt = 0.010          # time step MPC
 
-
 def avarage_computation(x,  var_name="x"):
     mean_value = np.mean(x) 
     print (f"mean value of {var_name} ",mean_value)
     return mean_value
-
 
 def plot_y_trajectory(trajectory_x,trajectory_y,wall_y,dividend):
     #plot graph with trajectory along y axis    
@@ -170,7 +168,7 @@ for dividend in all_choice:
     w_v = 0e-6          # velocity weight
     w_a = 1e-5          # acceleration weight
     w_final_v = 0e0     # final velocity cost weight
-    USE_TERMINAL_CONSTRAINT = 0 ### TODO: 1 ###
+    USE_TERMINAL_CONSTRAINT = 0                                             ### TODO: 1 ###
 
 
 
@@ -324,19 +322,15 @@ for dividend in all_choice:
         # a = forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]
         
         # breakpoint()
+        #list of all result to save in CSV file
         trajectory_y.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[1,3]))
         trajectory_x.append(float(forward_kinematics_ee(cs.DM.eye(4), x[:nq])[0,3]))
         status_step.append(sol.stats()["return_status"])
         list_computation_time.append(end_time-start_time)
         tracking_error.append(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze())
-        
         tracking_error_mean.append(np.linalg.norm(p_ee_des-forward_kinematics_ee(cs.DM.eye(4), x[:nq])[:3,3].toarray().squeeze()))
-        
         velocity_result.append(np.linalg.norm(x[nq:]))
-        
-        
         dq_history.append(x[nq:].copy())
-        
         
         
         tau = inv_dyn(sol.value(X[0]), sol.value(U[0])).toarray().squeeze()
@@ -364,7 +358,6 @@ for dividend in all_choice:
                 dq_history = dq_history)
             
     plot_y_trajectory(trajectory_x,trajectory_y,wall_y,dividend)
-    
     plot_velocity_each_joint(dq_history)
     plot_velocity_mean(velocity_result)
     plot_tracking_error(tracking_error_mean)
